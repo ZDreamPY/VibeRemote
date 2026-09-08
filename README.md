@@ -10,6 +10,16 @@
 
 ---
 
+## 📺 演示视频
+
+<p align="center">
+  <video src="assets/VibeRemote_promo.mp4" width="560" controls></video>
+</p>
+
+> 宣传片（AI 生成示意）。实际使用效果请以本地运行为准。
+
+---
+
 ## 它是什么？
 
 VibeRemote 让你用手机（或任何带浏览器的设备）**通过局域网直接遥控电脑**：
