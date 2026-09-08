@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# 运行日志（含敏感信息如手机访问记录，不上传）
+server.log
+
+# 环境文件
+.env
+.venv/
+
+# 系统
+Thumbs.db
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
