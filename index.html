@@ -152,7 +152,7 @@ html,body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(
 #center.ok{border-color:var(--neon2);color:var(--neon2)}
 
 /* 绑定弹层 */
-#sheet{position:fixed;inset:auto 0 0 0;z-index:50;background:rgba(10,12,24,.97);
+#sheet{position:fixed;inset:auto 0 0 0;z-index:60;background:rgba(10,12,24,.97);
   border:1px solid var(--card-border);border-radius:22px 22px 0 0;padding:14px 16px calc(14px + env(safe-area-inset-bottom));
   transform:translateY(110%);transition:transform .28s cubic-bezier(.2,.8,.2,1);
   max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -169,6 +169,12 @@ html,body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(
   border-radius:9px;padding:9px 2px;text-align:center;font-size:12px;color:var(--text);transition:all .1s}
 .picker .k:active{transform:scale(.92)}
 .picker .k.on{border-color:var(--neon2);color:var(--neon2);background:rgba(65,200,255,.12)}
+/* 双击槽的鼠标按键快捷行 */
+#mouseKeys{display:flex;gap:8px;margin-bottom:10px}
+#mouseKeys .mk{flex:1;text-align:center;border:1px solid var(--card-border);background:rgba(255,255,255,.05);
+  border-radius:12px;padding:10px 4px;font-size:13px;color:var(--text);transition:all .12s}
+#mouseKeys .mk:active{transform:scale(.95)}
+#mouseKeys .mk.on{border-color:var(--neon2);color:var(--neon2);background:rgba(65,200,255,.12)}
 .preview{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.4);
   border:1px dashed var(--card-border);border-radius:12px;padding:10px 12px;margin-bottom:12px}
 .pv-label{font-size:11px;color:var(--text-dim)}
@@ -185,8 +191,20 @@ html,body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(
   border:1px solid var(--card-border);border-radius:22px 22px 0 0;padding:14px 16px calc(14px + env(safe-area-inset-bottom));
   transform:translateY(110%);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
 #settingsSheet.open{transform:translateY(0)}
-#settingsSheetTitle{font-size:15px;font-weight:700;color:#fff;text-align:center;margin-bottom:10px}
 #settingsSheet h4{font-size:12px;color:var(--text-dim);text-align:center;font-weight:500;margin:10px 0 8px}
+.settingsHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.settingsHead span{font-size:15px;font-weight:700;color:#fff}
+#settingsClose{width:30px;height:30px;border:none;border-radius:50%;background:rgba(255,255,255,.08);
+  color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .12s}
+#settingsClose:active{background:var(--neon1)}
+.bind-grid{display:flex;flex-direction:column;gap:8px}
+.bind-cell{border:1px solid var(--card-border);border-radius:12px;padding:8px 12px;background:rgba(255,255,255,.04)}
+.bc-name{font-size:13px;color:#fff;display:flex;align-items:center;gap:6px}
+.bc-slots{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.slot{font-size:11px;color:var(--text);border:1px solid var(--card-border);border-radius:8px;
+  padding:3px 8px;background:rgba(255,255,255,.05);transition:all .12s}
+.slot:active{background:var(--neon1);color:#fff}
+.slot-off{color:var(--text-dim);opacity:.6}
 
 /* 底部提示 */
 #hint{font-size:10px;color:var(--text-dim);text-align:center;padding:2px 0 6px;opacity:.8}
@@ -243,28 +261,67 @@ html,body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(
 <div id="sheet">
   <div id="sheetTitle">绑定 ◀ 方向键</div>
   <h4>绑定组合快捷键（可多选修饰键 + 主键）</h4>
+  <div id="mouseKeys" style="display:none"></div>
   <div class="mods" id="mods"></div>
   <div class="picker" id="picker"></div>
   <div class="preview"><span class="pv-label">预览</span><span class="pv-val" id="pvVal">未选择</span></div>
   <div class="actions">
-    <button class="btn ghost" id="btnClear">清空</button>
-    <button class="btn primary" id="btnSave">保存到该方向</button>
+    <button class="btn ghost" id="btnBack">← 返回设置</button>
+    <button class="btn ghost" id="btnClear">清空(不生效)</button>
+    <button class="btn primary" id="btnSave">保存</button>
   </div>
 </div>
 
 <!-- 设置弹层 -->
 <div id="settingsSheet">
-  <div id="settingsSheetTitle">⚙ 设置</div>
-  <h4>四向键绑定</h4>
-  <div class="sendopts" id="dirBindRow">
-    <div class="so" data-bind="up">▲ 上</div>
-    <div class="so" data-bind="down">▼ 下</div>
-    <div class="so" data-bind="left">◀ 左</div>
-    <div class="so" data-bind="right">▶ 右</div>
+  <div class="settingsHead">
+    <span>⚙ 设置</span>
+    <button id="settingsClose" title="关闭设置">✕</button>
+  </div>
+  <h4>四向键 · 单击 / 双击</h4>
+  <div class="bind-grid" id="dirBindRow">
+    <div class="bind-cell" data-bind="up">
+      <span class="bc-name">▲ 上</span>
+      <div class="bc-slots">
+        <span class="slot" data-slot="sing">单击</span>
+        <span class="slot" data-slot="dbl">双击</span>
+      </div>
+    </div>
+    <div class="bind-cell" data-bind="down">
+      <span class="bc-name">▼ 下</span>
+      <div class="bc-slots">
+        <span class="slot" data-slot="sing">单击</span>
+        <span class="slot" data-slot="dbl">双击</span>
+      </div>
+    </div>
+    <div class="bind-cell" data-bind="left">
+      <span class="bc-name">◀ 左</span>
+      <div class="bc-slots">
+        <span class="slot" data-slot="sing">单击</span>
+        <span class="slot" data-slot="dbl">双击</span>
+      </div>
+    </div>
+    <div class="bind-cell" data-bind="right">
+      <span class="bc-name">▶ 右</span>
+      <div class="bc-slots">
+        <span class="slot" data-slot="sing">单击</span>
+        <span class="slot" data-slot="dbl">双击</span>
+      </div>
+    </div>
+  </div>
+  <h4>中心键 · 单击=左键（固定） / 双击</h4>
+  <div class="bind-grid">
+    <div class="bind-cell" data-bind="center">
+      <span class="bc-name">⏺ 中心</span>
+      <div class="bc-slots">
+        <span class="slot slot-off" title="固定为鼠标左键">单击=左键</span>
+        <span class="slot" data-slot="dbl" data-bind-slot="center-dbl">双击=右键</span>
+      </div>
+    </div>
   </div>
   <h4>鼠标灵敏度</h4>
   <div class="sendopts" id="sensRow">
-    <div class="so on" data-s="0.03">精</div>
+    <div class="so on" data-s="0.0169">精</div>
     <div class="so" data-s="0.08">中</div>
     <div class="so" data-s="0.18">快</div>
   </div>
@@ -304,13 +361,19 @@ function send(obj){ if (!ws || ws.readyState !== 1) return; ws.send(JSON.stringi
 connect();
 
 /* ================= 综合 ================= */
-let SENS = parseFloat(localStorage.getItem('viberel_sens') || '0.03'); // 鼠标灵敏度
-/* 齿轮设置面板开合 */
+let SENS = parseFloat(localStorage.getItem('viberel_sens') || '0.0169'); // 鼠标灵敏度
+function closeSettings(){ $('#settingsSheet').classList.remove('open'); }
+/* 齿轮开关 + 关闭按钮 + 点空白关闭 */
 $('#gearBtn').addEventListener('click', ()=>{
   $('#settingsSheet').classList.toggle('open');
 });
+$('#settingsClose').addEventListener('click', closeSettings);
 $('#settingsSheet').addEventListener('touchend', e => {
-  if (e.target === $('#settingsSheet')) $('#settingsSheet').classList.remove('open');
+  // 点到弹层外背景（sheet 自身/阴影区）关闭
+  if (e.target === $('#settingsSheet')) closeSettings();
+});
+$('#settingsSheet').addEventListener('click', e => {
+  if (e.target === $('#settingsSheet')) closeSettings();
 });
 /* 灵敏度档位（挂在设置面板） */
 document.querySelectorAll('#sensRow .so').forEach(el=>{
@@ -322,11 +385,20 @@ document.querySelectorAll('#sensRow .so').forEach(el=>{
     document.querySelectorAll('#sensRow .so').forEach(x=>x.classList.toggle('on', x===el));
   });
 });
-/* 四向键绑定入口（设置面板 → 换绑弹层） */
-document.querySelectorAll('#dirBindRow .so').forEach(el=>{
+/* 四向键/中心键绑定入口（设置面板 → 换绑弹层）：单击/双击两个槽位 */
+function bindTargetFrom(el){
+  // 返回 {key:'up'|'center', slot:'bind'|'bind2'}
+  const base = el.closest('.bind-cell');
+  const key = base ? base.dataset.bind : 'up';
+  const slot = el.dataset.slot === 'dbl' ? 'bind2' : 'bind';
+  return {key, slot};
+}
+document.querySelectorAll('#dirBindRow .slot, #settingsSheet .bind-cell[data-bind="center"] .slot').forEach(el=>{
+  if (el.classList.contains('slot-off')) return;
   el.addEventListener('click',()=>{
-    $('#settingsSheet').classList.remove('open');
-    openSheet(el.dataset.bind);
+    const {key, slot} = bindTargetFrom(el);
+    // 不关闭设置页：绑定弹层叠在其上方（z-index 更高），保存/返回后自然退回设置页
+    openSheet(key, slot);
   });
 });
 
@@ -439,26 +511,36 @@ const KEY_LIST = [
   ['y','Y'],['z','Z'],['0','0'],['1','1'],['2','2'],['3','3'],
   ['4','4'],['5','5'],['6','6'],['7','7'],['8','8'],['9','9'],
 ];
-const DIR_LBL = {up:'▲ 上', down:'▼ 下', left:'◀ 左', right:'▶ 右'};
-const DEFAULTS = {up:['up'], down:['down'], left:['backspace'], right:['alt','tab']};
-// 带版本的默认值：新默认绑定仅在无存档或版本升级时生效
-const DEF_VER = 'v2';
+const DIR_LBL = {up:'▲ 上', down:'▼ 下', left:'◀ 左', right:'▶ 右', center:'⏺ 中心'};
+// bind=单击，bind2=双击。默认：右双击=Win+Tab，中心双击=鼠标右键，其余双击为空
+const DEFAULTS = {
+  up:{bind:['up'], bind2:[]},
+  down:{bind:['down'], bind2:[]},
+  left:{bind:['backspace'], bind2:[]},
+  right:{bind:['alt','tab'], bind2:['win','tab']},
+  center:{bind:['left_click'], bind2:['right_click']},
+};
+const DEF_VER = 'v3';
 let _raw = JSON.parse(localStorage.getItem('viberel_defs') || 'null');
 let _ver = localStorage.getItem('viberel_defs_ver') || '';
 const defs = {};
 function saveDefs(){ localStorage.setItem('viberel_defs', JSON.stringify(defs)); }
+const KEYS = ['up','down','left','right','center'];
 if (_ver !== DEF_VER){
-  // 版本升级：丢弃旧绑定，用新默认（左=退格 右=Alt+Tab）
-  ['up','down','left','right'].forEach(d=>{ defs[d] = {bind:[...DEFAULTS[d]]}; });
+  // 版本升级：用新默认（含双击槽位）
+  KEYS.forEach(k=>{ defs[k] = {bind:[...(DEFAULTS[k].bind||[])], bind2:[...(DEFAULTS[k].bind2||[])]}; });
   saveDefs(); localStorage.setItem('viberel_defs_ver', DEF_VER);
 } else {
-  ['up','down','left','right'].forEach(d=>{
-    defs[d] = (_raw && _raw[d])
-      ? (_raw[d].bind ? _raw[d] : {bind:[_raw[d][0]]})
-      : {bind:[...DEFAULTS[d]]};
+  KEYS.forEach(k=>{
+    const d = _raw && _raw[k] ? _raw[k] : DEFAULTS[k];
+    defs[k] = {
+      bind: (d.bind || (typeof d==='object' && d[0] ? [d[0]] : [])),
+      bind2: (d.bind2 || [])
+    };
   });
 }
-const KEY_LBL = {}; [...MOD_LIST,...KEY_LIST].forEach(([k,l])=>KEY_LBL[k]=l);
+const KEY_LBL = {left_click:'鼠标左键', right_click:'鼠标右键', ...Object.fromEntries([...MOD_LIST,...KEY_LIST])};
+const MOUSE_KEYS = [['left_click','🖱 鼠标左键'],['right_click','🖱 鼠标右键']];
 function defLabel(keys){
   if (!keys || !keys.length) return '未绑定';
   return keys.map(k=>KEY_LBL[k]||k).join(' + ');
@@ -469,13 +551,31 @@ function refreshDirLabels(){
     el.querySelector('.lbl').textContent = defLabel(bind);
   });
 }
+/* 刷新设置面板里的 单击/双击 槽位文字 */
+function refreshSlotLabels(){
+  document.querySelectorAll('.bind-cell').forEach(cell=>{
+    const k = cell.dataset.bind;
+    const singEl = cell.querySelector('.slot[data-slot="sing"]');
+    cell.querySelectorAll('.slot[data-slot="dbl"]').forEach(el=>{
+      const bind2 = (defs[k]||{}).bind2 || [];
+      el.textContent = '双击=' + (defLabel(bind2) || '不生效');
+    });
+    if (singEl && k!=='center'){
+      singEl.textContent = '单击=' + (defLabel((defs[k]||{}).bind) || '未绑定');
+    }
+  });
+}
 
 /* —— 弹层编辑器状态 —— */
-let editDir = null;
+let editKey = null;      // 'up'|'down'|'left'|'right'|'center'
+let editSlot = 'bind';   // 'bind'=单击 'bind2'=双击
 const modSel = new Set();
 let keySel = null;
 
 function buildSheet(){
+  // 鼠标快捷键行（仅双击槽位显示，直观选右键/左键）
+  const mb = document.getElementById('mouseKeys');
+  if (mb){ mb.innerHTML=''; }
   const mods = $('#mods'); mods.innerHTML='';
   MOD_LIST.forEach(([k,l])=>{
     const b=document.createElement('div');
@@ -499,31 +599,50 @@ function buildSheet(){
     });
     pk.appendChild(b);
   });
+  if (mb){
+    MOUSE_KEYS.forEach(([k,l])=>{
+      const b=document.createElement('div');
+      b.className='mk'+(keySel===k?' on':'');
+      b.textContent=l;
+      b.addEventListener('click',()=>{
+        if (keySel===k) keySel=null; else keySel=k;
+        mb.querySelectorAll('.mk').forEach(c=>c.classList.toggle('on', c.dataset.k===keySel));
+        b.dataset.k=k; updatePv();
+      });
+      mb.appendChild(b);
+    });
+  }
 }
 function updatePv(){
   if (!keySel){ $('#pvVal').textContent='未选择主键'; return; }
   const combo=[...modSel, keySel];
   $('#pvVal').textContent = defLabel(combo);
 }
-function openSheet(dir){
-  editDir=dir;
+function openSheet(key, slot){
+  editKey = key; editSlot = slot || 'bind';
+  const isDbl = editSlot === 'bind2';
+  const nm = key==='center' ? '⏺ 中心键' : DIR_LBL[key];
+  $('#sheetTitle').textContent = isDbl ? `设置 ${nm} 的双击` : `设置 ${nm} 的单击`;
+  // 鼠标键行仅双击槽显示（单击槽也可显示左键但中心键单击已固定）
+  const mb = document.getElementById('mouseKeys');
+  mb.style.display = isDbl ? 'flex' : 'none';
   modSel.clear(); keySel=null;
-  $('#sheetTitle').textContent = `绑定 ${DIR_LBL[dir]}`;
   buildSheet();
   $('#pvVal').textContent='未选择主键';
-  const cur = defs[dir].bind;
+  const cur = (defs[key]||{})[editSlot] || [];
   // 回显已绑定项
   if (cur && cur.length){
     const mods=cur.slice(0,-1), main=cur[cur.length-1];
     mods.forEach(m=>modSel.add(m));
     keySel=main;
-    [...document.querySelectorAll('.mods .m')].forEach(b=>
-      b.classList.toggle('on', modSel.has(b._k)));
     document.querySelectorAll('.mods .m').forEach((b,i)=>{
       b.classList.toggle('on', !!b._k && modSel.has(b._k));
     });
     [...document.querySelectorAll('.picker .k')].forEach(b=>{
       if (b._k===keySel) b.classList.add('on');
+    });
+    mb.querySelectorAll('.mk').forEach(b=>{
+      if (b.dataset.k===keySel) b.classList.add('on');
     });
     updatePv();
   }
@@ -535,22 +654,29 @@ function tagOpts(){
   document.querySelectorAll('.picker .k').forEach((b,i)=>{ b._k=KEY_LIST[i][0]; });
 }
 $('#btnSave').addEventListener('click',()=>{
-  if (!editDir) return;
+  if (!editKey) return;
   if (!keySel){ $('#pvVal').textContent='⚠ 请先选主键'; return; }
-  defs[editDir] = { bind:[...modSel, keySel] };
-  saveDefs(); refreshDirLabels();
-  $('#sheet').classList.remove('open');
+  const val = [...modSel, keySel];
+  // 中心键单击固定为左键，禁止改
+  if (editKey==='center' && editSlot==='bind'){ defs.center.bind=['left_click']; }
+  else { defs[editKey][editSlot] = val; }
+  saveDefs(); refreshDirLabels(); refreshSlotLabels();
+  $('#sheet').classList.remove('open');   // 只关绑定弹层，返回设置页
 });
 $('#btnClear').addEventListener('click',()=>{
-  if (!editDir) return;
-  defs[editDir]={ bind:[] };
-  saveDefs(); refreshDirLabels();
-  $('#sheet').classList.remove('open');
+  if (!editKey) return;
+  if (editKey==='center' && editSlot==='bind'){ defs.center.bind=['left_click']; }
+  else { defs[editKey][editSlot] = []; }
+  saveDefs(); refreshDirLabels(); refreshSlotLabels();
+  $('#sheet').classList.remove('open');   // 只关绑定弹层，返回设置页
+});
+$('#btnBack').addEventListener('click',()=>{
+  $('#sheet').classList.remove('open');   // 不保存，直接返回设置页
 });
 $('#sheet').addEventListener('touchend', e => {
   if (e.target.id==='sheet') $('#sheet').classList.remove('open');
 });
-tagOpts(); refreshDirLabels();
+tagOpts(); refreshDirLabels(); refreshSlotLabels();
 
 function flashDir(d){
   const el = document.querySelector(`.dir[data-dir="${d}"]`);
@@ -558,38 +684,77 @@ function flashDir(d){
   el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
   setTimeout(()=>el.classList.remove('flash'), 500);
 }
+/* 执行一次绑定（支持鼠标动作） */
+function runBind(keys){
+  if (!keys || !keys.length) return;
+  if (keys.length===1){
+    if (keys[0]==='left_click'){ send({type:'click', btn:'left'}); return; }
+    if (keys[0]==='right_click'){ send({type:'click', btn:'right'}); return; }
+    send({type:'key', key:keys[0]});
+  } else {
+    send({type:'combo', keys});
+  }
+}
 function fireDir(d){
   const bind = defs[d].bind;
   flashDir(d);
-  if (!bind || !bind.length) return;
-  if (bind.length===1) send({type:'key', key:bind[0]});
-  else send({type:'combo', keys:bind});
+  runBind(bind);
   waveBoost();
+}
+/* 双击检测：单击若有绑定且 0.28s 内再来一次 → 双击 */
+const DBL_MS = 280;
+const dblState = {};   // key -> {tm, timer}
+function fireKey(key){
+  const def = defs[key];
+  const st = dblState[key] || (dblState[key] = {tm:0, timer:null});
+  const now = Date.now();
+  if (def.bind2 && def.bind2.length && now - st.tm < DBL_MS){
+    // 双击：取消待发的单击，改发双击
+    clearTimeout(st.timer);
+    st.tm = 0;
+    runBind(def.bind2);
+    if (key==='center') centerFlash(); else flashDir(key);
+    waveBoost();
+    return;
+  }
+  st.tm = now;
+  // 延迟弹出单击（留时间给双击判定）
+  if (def.bind2 && def.bind2.length){
+    st.timer = setTimeout(()=>{ st.tm = 0; runBind(def.bind); }, DBL_MS);
+  } else {
+    runBind(def.bind);
+  }
+  if (key!=='center'){ flashDir(key); }
+  waveBoost();
+}
+function centerFlash(){
+  const c = $('#center');
+  c.classList.add('flash');
+  setTimeout(()=> c.classList.remove('flash'), 300);
+  return '1';
 }
 
 /* ================= 轮子：方向键/中心键/滑动（元素驱动，最可靠） ================= */
 const wheel = $('#wheelWrap');
 const SENS_NOW = () => SENS; // 实时读取灵敏度
 
-/* —— 方向键：手指按下高亮，松开后 flash + 触发绑定 —— */
+/* —— 方向键：手指按下高亮，松开后 flash + 触发绑定（含双击） —— */
 document.querySelectorAll('.dir').forEach(el=>{
   el.addEventListener('touchstart', ()=>{ el.classList.add('on'); }, {passive:true});
   el.addEventListener('touchend', ()=>{ el.classList.remove('on'); }, {passive:true});
   el.addEventListener('mousedown', ()=>{ el.classList.add('on'); });
   el.addEventListener('mouseup', ()=>{ el.classList.remove('on'); });
   el.addEventListener('click', (ev)=>{
-    fireDir(el.dataset.dir);
+    fireKey(el.dataset.dir);
   });
 });
 
-/* —— 中心键：点击 = 鼠标左键（带 flash） —— */
+/* —— 中心键：单击=鼠标左键（固定）/ 双击=自定义（默认右键） —— */
 $('#center').addEventListener('touchstart', ()=>{ $('#center').classList.add('on'); }, {passive:true});
 $('#center').addEventListener('touchend', ()=>{ $('#center').classList.remove('on'); }, {passive:true});
 $('#center').addEventListener('click', (ev)=>{
   ev.preventDefault();
-  $('#center').classList.add('flash');
-  setTimeout(()=> $('#center').classList.remove('flash'), 300);
-  send({type:'click', btn:'left'});
+  fireKey('center');
 });
 
 /* —— 轮环空白区滑动：单指=鼠标，双指=滚动 —— */
