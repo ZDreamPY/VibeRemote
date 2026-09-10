@@ -6,14 +6,84 @@
 <title>VibeRemote</title>
 <style>
 :root{
+  /* 语义化主题 Token（默认为「夜霓虹」） */
   --bg:#000;
+  --glass:rgba(10,12,24,.9);
   --card:rgba(255,255,255,.06);
   --card-border:rgba(255,255,255,.10);
   --text:#fff;
   --text-dim:rgba(255,255,255,.55);
   --neon1:#7b5bff;   /* 蓝紫渐变起点 */
   --neon2:#41c8ff;   /* 蓝紫渐变终点 */
+  --glow:0 4px 20px rgba(0,0,0,.5);
+  --wheel-ring:conic-gradient(from 180deg,#6a4dff,var(--neon2),#6a4dff);
+  --wheel-inner:conic-gradient(from 180deg,#2a2f4a,#1c2740,#2a2f4a);
+  --dir-color:#cdd6ff;
+  --wheel-lbl-bg:rgba(0,0,0,.35);
+  --wheel-lbl:var(--text-dim);
+  --ring-shadow:0 0 30px rgba(120,90,255,.35),inset 0 0 30px rgba(0,0,0,.6);
+  --wave-op:.9;
   --wheel-size:min(78vw,340px);
+}
+/* —— 主题：赛博星云（深空紫青） —— */
+body[data-theme="nebula"]{
+  --bg:#0a0d1f;
+  --glass:rgba(12,16,34,.92);
+  --card:rgba(120,140,255,.10);
+  --card-border:rgba(150,170,255,.22);
+  --text:#eef1ff;
+  --text-dim:rgba(200,210,255,.6);
+  --neon1:#00e5ff;   /* 青 */
+  --neon2:#ff3df0;   /* 品红 */
+  --glow:0 4px 24px rgba(0,229,255,.18);
+  --wheel-ring:conic-gradient(from 180deg,#00e5ff,#ff3df0,#00e5ff);
+  --wheel-inner:conic-gradient(from 180deg,#141a3a,#0d1128,#141a3a);
+  --dir-color:#b8e6ff;
+}
+/* —— 主题：银幕极简（浅色重做：干净明亮、清爽蓝） —— */
+body[data-theme="silver"]{
+  --bg:#eef2f9;
+  --glass:rgba(255,255,255,.92);
+  --card:rgba(255,255,255,.78);
+  --card-border:rgba(30,50,110,.16);
+  --text:#14213d;
+  --text-dim:rgba(20,33,61,.52);
+  --neon1:#3b6cf6;   /* 清爽蓝 */
+  --neon2:#22c1e6;   /* 青 */
+  --glow:0 4px 18px rgba(60,110,255,.18);
+  --wheel-ring:conic-gradient(from 180deg,#3b6cf6,#7fd8ff,#3b6cf6);
+  --wheel-inner:conic-gradient(from 180deg,#e8eefb,#d3dff6,#e8eefb);
+  --dir-color:#33497e;
+  --wheel-lbl-bg:rgba(40,70,160,.12);
+  --wheel-lbl:#33497e;
+  --ring-shadow:0 0 26px rgba(60,110,255,.22),inset 0 0 22px rgba(120,150,255,.25);
+}
+/* 银幕浅色专属微调：玻璃元素换清晰浅蓝底 */
+body[data-theme="silver"] .glass,
+body[data-theme="silver"] .bind-cell,
+body[data-theme="silver"] .slot,
+body[data-theme="silver"] .mods .m,
+body[data-theme="silver"] .picker .k,
+body[data-theme="silver"] .so,
+body[data-theme="silver"] .status-line,
+body[data-theme="silver"] #gearBtn{background:rgba(255,255,255,.65);border-color:rgba(30,50,110,.16)}
+/* —— 主题：极客模式（黑底 + 数码绿，Matrix 风） —— */
+body[data-theme="geek"]{
+  --bg:#04070a;
+  --glass:rgba(4,10,8,.94);
+  --card:rgba(0,255,65,.05);
+  --card-border:rgba(0,255,65,.20);
+  --text:#c8ffd9;
+  --text-dim:rgba(140,235,170,.55);
+  --neon1:#00ff41;   /* 数码绿 */
+  --neon2:#00c2a8;   /* 青绿 */
+  --glow:0 4px 16px rgba(0,255,65,.15);
+  --wheel-ring:conic-gradient(from 180deg,#00ff41,#00c2a8,#00ff41);
+  --wheel-inner:conic-gradient(from 180deg,#03140c,#011008,#03140c);
+  --dir-color:#6dff9e;
+  --wheel-lbl-bg:rgba(0,255,65,.14);
+  --wheel-lbl:#9dffc0;
+  --ring-shadow:0 0 26px rgba(0,255,65,.25),inset 0 0 26px rgba(0,0,0,.85);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(--text);
@@ -25,9 +95,9 @@ html,body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(
 
 /* ============ 输入条（控制盘上方，文档流内） ============ */
 #typebar{width:var(--wheel-size);flex-shrink:0;display:flex;align-items:flex-end;gap:8px;
-  border:1px solid var(--card-border);border-radius:16px;background:rgba(10,12,24,.9);
+  border:1px solid var(--card-border);border-radius:16px;background:var(--glass);
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  padding:8px 10px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+  padding:8px 10px;box-shadow:var(--glow)}
 #text{flex:1;background:transparent;border:none;outline:none;color:var(--text);
   font-size:16px;padding:6px 2px;min-width:0;resize:none;overflow-y:auto;
   height:36px;line-height:1.4;max-height:150px;-webkit-appearance:none}
@@ -48,7 +118,7 @@ html,body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(
 /* 波形：展示区底部细条 */
 #stage{flex:34;min-height:0;position:relative;display:flex;flex-direction:column;overflow:hidden;
   padding:12px 14px 0;z-index:0}
-#wave{position:absolute;left:10px;right:10px;bottom:0;height:24%;opacity:.9;display:flex;z-index:0;
+#wave{position:absolute;left:10px;right:10px;bottom:0;height:24%;opacity:var(--wave-op);display:flex;z-index:0;
   align-items:flex-end;justify-content:center;gap:3px;pointer-events:none}
 #wave i{flex:1;max-width:6px;height:12%;border-radius:3px;
   background:linear-gradient(180deg,var(--neon2),var(--neon1));
@@ -105,17 +175,19 @@ html,body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(
 /* ===== iPod 点击轮 ===== */
 #wheelWrap{position:relative;width:var(--wheel-size);height:var(--wheel-size);flex-shrink:0}
 #wheelRing{position:absolute;inset:0;border-radius:50%;
-  background:conic-gradient(from 180deg,#6a4dff,var(--neon2),#6a4dff);
-  box-shadow:0 0 30px rgba(120,90,255,.35),inset 0 0 30px rgba(0,0,0,.6)}
+  background:var(--wheel-ring);
+  box-shadow:var(--ring-shadow);
+  transform:rotate(var(--rot,0deg));
+  transition:transform .4s cubic-bezier(.2,.8,.25,1);will-change:transform}
 #wheelRing::after{content:"";position:absolute;inset:4%;border-radius:50%;
-  background:conic-gradient(from 180deg,#2a2f4a,#1c2740,#2a2f4a);
+  background:var(--wheel-inner);
   box-shadow:inset 0 0 18px rgba(0,0,0,.85)}
 /* 四向命中区 */
 .dir{position:absolute;z-index:3;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;color:#cdd6ff;transition:all .12s}
+  justify-content:center;color:var(--dir-color);transition:all .12s}
 .dir .ico{font-size:15px;line-height:1}
-.dir .lbl{font-size:9px;margin-top:2px;background:rgba(0,0,0,.35);
-  padding:1px 6px;border-radius:8px;white-space:nowrap}
+.dir .lbl{font-size:9px;margin-top:2px;background:var(--wheel-lbl-bg);
+  padding:1px 6px;border-radius:8px;white-space:nowrap;color:var(--wheel-lbl)}
 .dir.on{background:radial-gradient(circle,rgba(120,160,255,.55),transparent 70%);
   color:#fff;text-shadow:0 0 10px #fff}
 /* 点击闪动反馈：圆形径向光晕 + 文字高亮，无方框硬边 */
@@ -152,13 +224,13 @@ html,body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(
 #center.ok{border-color:var(--neon2);color:var(--neon2)}
 
 /* 绑定弹层 */
-#sheet{position:fixed;inset:auto 0 0 0;z-index:60;background:rgba(10,12,24,.97);
+#sheet{position:fixed;inset:auto 0 0 0;z-index:60;background:var(--glass);
   border:1px solid var(--card-border);border-radius:22px 22px 0 0;padding:14px 16px calc(14px + env(safe-area-inset-bottom));
   transform:translateY(110%);transition:transform .28s cubic-bezier(.2,.8,.2,1);
   max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
 #sheet.open{transform:translateY(0)}
 #sheet h4{font-size:12px;color:var(--text-dim);margin-bottom:10px;text-align:center;font-weight:500}
-#sheet #sheetTitle{font-size:15px;color:#fff;text-align:center;margin-bottom:8px;font-weight:700}
+#sheet #sheetTitle{font-size:15px;color:var(--text);text-align:center;margin-bottom:8px;font-weight:700}
 .mods{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
 .mods .m{border:1px solid var(--card-border);background:rgba(255,255,255,.05);
   border-radius:10px;padding:8px 14px;font-size:13px;color:var(--text-dim);transition:all .12s}
@@ -178,7 +250,7 @@ html,body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(
 .preview{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.4);
   border:1px dashed var(--card-border);border-radius:12px;padding:10px 12px;margin-bottom:12px}
 .pv-label{font-size:11px;color:var(--text-dim)}
-.pv-val{font-size:15px;color:#fff;font-weight:600;flex:1;text-align:right;word-break:break-all}
+.pv-val{font-size:15px;color:var(--text);font-weight:600;flex:1;text-align:right;word-break:break-all}
 .actions{display:flex;gap:10px}
 .btn{flex:1;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:600;transition:transform .1s}
 .btn:active{transform:scale(.97)}
@@ -187,19 +259,19 @@ html,body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(
   box-shadow:0 2px 12px rgba(90,110,255,.45)}
 
 /* 设置弹层 */
-#settingsSheet{position:fixed;inset:auto 0 0 0;z-index:50;background:rgba(10,12,24,.97);
+#settingsSheet{position:fixed;inset:auto 0 0 0;z-index:50;background:var(--glass);
   border:1px solid var(--card-border);border-radius:22px 22px 0 0;padding:14px 16px calc(14px + env(safe-area-inset-bottom));
   transform:translateY(110%);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
 #settingsSheet.open{transform:translateY(0)}
 #settingsSheet h4{font-size:12px;color:var(--text-dim);text-align:center;font-weight:500;margin:10px 0 8px}
 .settingsHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-.settingsHead span{font-size:15px;font-weight:700;color:#fff}
+.settingsHead span{font-size:15px;font-weight:700;color:var(--text)}
 #settingsClose{width:30px;height:30px;border:none;border-radius:50%;background:rgba(255,255,255,.08);
-  color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .12s}
+  color:var(--text);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .12s}
 #settingsClose:active{background:var(--neon1)}
 .bind-grid{display:flex;flex-direction:column;gap:8px}
 .bind-cell{border:1px solid var(--card-border);border-radius:12px;padding:8px 12px;background:rgba(255,255,255,.04)}
-.bc-name{font-size:13px;color:#fff;display:flex;align-items:center;gap:6px}
+.bc-name{font-size:13px;color:var(--text);display:flex;align-items:center;gap:6px}
 .bc-slots{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
 .slot{font-size:11px;color:var(--text);border:1px solid var(--card-border);border-radius:8px;
   padding:3px 8px;background:rgba(255,255,255,.05);transition:all .12s}
@@ -319,6 +391,13 @@ html,body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(
       </div>
     </div>
   </div>
+  <h4>主题皮肤</h4>
+  <div class="sendopts" id="themeRow">
+    <div class="so" data-theme="neon">夜霓虹</div>
+    <div class="so" data-theme="nebula">赛博星云</div>
+    <div class="so" data-theme="silver">银幕极简</div>
+    <div class="so" data-theme="geek">极客模式</div>
+  </div>
   <h4>鼠标灵敏度</h4>
   <div class="sendopts" id="sensRow">
     <div class="so on" data-s="0.0169">精</div>
@@ -362,6 +441,24 @@ connect();
 
 /* ================= 综合 ================= */
 let SENS = parseFloat(localStorage.getItem('viberel_sens') || '0.0169'); // 鼠标灵敏度
+/* —— 主题切换 —— */
+function applyTheme(t){
+  document.body.setAttribute('data-theme', t);
+  localStorage.setItem('viberel_theme', t);
+  // 同步设置面板里的主题选项高亮
+  const row = document.getElementById('themeRow');
+  if (row) row.querySelectorAll('.so').forEach(el=>{
+    el.classList.toggle('on', el.dataset.theme===t);
+  });
+}
+(function initTheme(){
+  let t = localStorage.getItem('viberel_theme') || 'neon';
+  if (t === 'night') t = 'geek';   // 旧「夜间模式」迁移为「极客模式」
+  applyTheme(t);
+  document.querySelectorAll('#themeRow .so').forEach(el=>{
+    el.addEventListener('click', ()=>{ applyTheme(el.dataset.theme); });
+  });
+})();
 function closeSettings(){ $('#settingsSheet').classList.remove('open'); }
 /* 齿轮开关 + 关闭按钮 + 点空白关闭 */
 $('#gearBtn').addEventListener('click', ()=>{
@@ -425,13 +522,19 @@ const LOG_MAX = 8; // 持久化上限条数
 function saveLog(arr){ try{ localStorage.setItem(LOG_KEY, JSON.stringify(arr.slice(0,LOG_MAX))); }catch(e){} }
 
 function recordSend(t, time){
-  const now = time || new Date().toTimeString().slice(0,8);
+  const now = time || fmtStamp();
   addLogLine(t, now);
   // 持久化：新记录插到最前
   let arr = [];
   try{ arr = JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); }catch(e){ arr=[]; }
   arr.unshift({t:t, time:now});
   saveLog(arr);
+}
+// 时间戳：MM-DD HH:MM（含日期，跨天可区分）
+function fmtStamp(d){
+  const x = d || new Date();
+  const p = n => String(n).padStart(2,'0');
+  return `${p(x.getMonth()+1)}-${p(x.getDate())} ${p(x.getHours())}:${p(x.getMinutes())}`;
 }
 function addLogLine(t, now){
   const log = $('#sendLog');
@@ -461,10 +564,12 @@ function addLogLine(t, now){
   while (log.children.length > 8) log.removeChild(log.lastChild);
   log.scrollTop = 0;
 }
-/* 页面加载时恢复上次发送记录 */
+/* 页面加载时恢复上次发送记录（数组最前=最新；从最旧开始渲染，最新落在顶部） */
 (function restoreLog(){
   let arr=[]; try{ arr = JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); }catch(e){}
-  arr.forEach(item=>{ addLogLine(item.t, item.time); });
+  for (let i=arr.length-1; i>=0; i--){
+    addLogLine(arr[i].t, arr[i].time);
+  }
 })();
 $('#sendBtn').addEventListener('click', doSend);
 /* 输入法回车 = 自动发送（IME 确认键发出 Enter 即发送） */
@@ -757,11 +862,30 @@ $('#center').addEventListener('click', (ev)=>{
   fireKey('center');
 });
 
-/* —— 轮环空白区滑动：单指=鼠标，双指=滚动 —— */
-let ringStart = null;   // {x,y,lx,ly,two}
+/* —— 轮环空白区滑动：单指=鼠标(带旋转动效)，双指=滚动 —— */
+let ringStart = null;   // {x,y,lx,ly,two, ang, rot}
+let ringAcc = 0;        // 累积旋转角
+let ringAnim = null;    // 回弹动画帧
 function wheelRadius(){
   const r = wheel.getBoundingClientRect();
   return r.width/2;
+}
+function ringGeoPoint(px, py){
+  const r = wheel.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  return {cx, cy, ang:Math.atan2(py-cy, px-cx)};
+}
+function setRingRot(deg, spring){
+  const ring = $('#wheelRing');
+  ring.style.transition = spring ? 'transform .65s cubic-bezier(.15,.9,.25,1)' : 'transform .05s linear';
+  ring.style.transform = `rotate(${deg}deg)`;
+}
+function ringSpringBack(){
+  cancelAnimationFrame(ringAnim);
+  ringAnim = requestAnimationFrame(()=>{
+    ringAcc = 0;
+    setRingRot(0, true);
+  });
 }
 wheel.addEventListener('touchstart', e=>{
   const t = e.touches[0];
@@ -770,7 +894,9 @@ wheel.addEventListener('touchstart', e=>{
   const dist = Math.hypot(t.clientX-cx, t.clientY-cy);
   // 距圆心 > 0.60r（外环区）一律进入滑动；内圈=按键区走 click
   if (dist <= wheelRadius()*0.60) return;
-  ringStart = {x:t.clientX, y:t.clientY, lx:t.clientX, ly:t.clientY, two:e.touches.length===2};
+  cancelAnimationFrame(ringAnim);
+  const g = ringGeoPoint(t.clientX, t.clientY);
+  ringStart = {x:t.clientX, y:t.clientY, lx:t.clientX, ly:t.clientY, two:e.touches.length===2, ang:g.ang};
 }, {passive:true});
 wheel.addEventListener('touchmove', e=>{
   if (!ringStart) return;
@@ -786,9 +912,20 @@ wheel.addEventListener('touchmove', e=>{
     const dy = t[0].clientY - ringStart.ly;
     send({type:'move', dx:dx*SENS_NOW()*0.5, dy:dy*SENS_NOW()*0.5});
     ringStart.lx = t[0].clientX; ringStart.ly = t[0].clientY;
+    // 旋转动效：按手指绕圆心转过的角度累积（外环跟着转）
+    const g = ringGeoPoint(t[0].clientX, t[0].clientY);
+    let dA = g.ang - ringStart.ang;
+    if (dA > Math.PI) dA -= Math.PI*2;
+    if (dA < -Math.PI) dA += Math.PI*2;
+    ringAcc += dA * 180/Math.PI;
+    ringStart.ang = g.ang;
+    setRingRot(ringAcc, false);
   }
 }, {passive:false});
-wheel.addEventListener('touchend', ()=>{ ringStart=null; }, {passive:true});
+wheel.addEventListener('touchend', ()=>{
+  ringStart=null;
+  ringSpringBack();   // 松手回弹到原位置
+}, {passive:true});
 </script>
 </body>
 </html>
