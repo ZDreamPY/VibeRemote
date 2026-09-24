@@ -67,6 +67,9 @@ body[data-theme="silver"] .picker .k,
 body[data-theme="silver"] .so,
 body[data-theme="silver"] .status-line,
 body[data-theme="silver"] #gearBtn{background:rgba(255,255,255,.65);border-color:rgba(30,50,110,.16)}
+/* 银幕浅色下灵敏度「精」单元格保持主题渐变，+/− 按钮保持霓虹描边 */
+body[data-theme="silver"] .sens-step .sens-mid{background:linear-gradient(135deg,var(--neon1),var(--neon2));border-color:var(--neon2);color:#fff}
+body[data-theme="silver"] .sens-step #sensMinus,body[data-theme="silver"] .sens-step #sensPlus{border-color:var(--neon2);color:var(--neon2)}
 /* —— 主题：极客模式（黑底 + 数码绿，Matrix 风） —— */
 body[data-theme="geek"]{
   --bg:#04070a;
@@ -114,6 +117,17 @@ html,body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(
   border:1px solid var(--card-border);border-radius:10px;padding:6px 4px;background:rgba(255,255,255,.04);
   transition:all .12s}
 .sendopts .so.on{border-color:var(--neon2);color:var(--neon2);background:rgba(65,200,255,.1)}
+
+/* 灵敏度步进器：− 精 +（跟随主题配色） */
+.sens-step{display:flex;gap:8px;align-items:stretch}
+.sens-step .so{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;line-height:1.2}
+.sens-step #sensMinus,.sens-step #sensPlus{width:54px;flex:none;font-size:20px;font-weight:700;
+  color:var(--neon2);border-color:var(--neon2);background:var(--glass);transition:all .12s}
+.sens-step #sensMinus:active,.sens-step #sensPlus:active{
+  background:linear-gradient(135deg,var(--neon1),var(--neon2));color:#fff}
+.sens-step .sens-mid{flex:1;font-size:14px;color:#fff;border-color:var(--neon2);
+  background:linear-gradient(135deg,var(--neon1),var(--neon2));box-shadow:0 0 12px var(--neon2)}
+.sens-step .sens-mid small{font-size:9px;opacity:.85;font-variant-numeric:tabular-nums}
 
 /* 波形：展示区底部细条 */
 #stage{flex:34;min-height:0;position:relative;display:flex;flex-direction:column;overflow:hidden;
@@ -428,10 +442,10 @@ html,body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(
     <div class="so" data-theme="geek">极客模式</div>
   </div>
   <h4>鼠标灵敏度</h4>
-  <div class="sendopts" id="sensRow">
-    <div class="so on" data-s="0.0169">精</div>
-    <div class="so" data-s="0.08">中</div>
-    <div class="so" data-s="0.18">快</div>
+  <div class="sens-step">
+    <button class="so" id="sensMinus" title="降低灵敏度">−</button>
+    <div class="so sens-mid"><span>精</span><small id="sensVal"></small></div>
+    <button class="so" id="sensPlus" title="提高灵敏度">+</button>
   </div>
 </div>
 
@@ -527,16 +541,21 @@ $('#settingsSheet').addEventListener('touchend', e => {
 $('#settingsSheet').addEventListener('click', e => {
   if (e.target === $('#settingsSheet')) closeSettings();
 });
-/* 灵敏度档位（挂在设置面板） */
-document.querySelectorAll('#sensRow .so').forEach(el=>{
-  const v = parseFloat(el.dataset.s);
-  if (Math.abs(v - SENS) < 1e-6) el.classList.add('on');
-  el.addEventListener('click',()=>{
-    SENS = v;
-    localStorage.setItem('viberel_sens', String(v));
-    document.querySelectorAll('#sensRow .so').forEach(x=>x.classList.toggle('on', x===el));
-  });
+/* 灵敏度：以「精」为基准，+/− 每档 ×/÷ 1.25 微调，持久化 localStorage */
+const SENS_BASE = 0.0169, SENS_STEP = 1.25, SENS_MIN = 0.003, SENS_MAX = 0.25;
+function fmtSens(v){ return v.toFixed(4).replace(/0+$/,'').replace(/\.$/,''); }
+function applySens(){ $('#sensVal').textContent = fmtSens(SENS); }
+$('#sensMinus').addEventListener('click', ()=>{
+  SENS = Math.max(SENS_MIN, SENS / SENS_STEP);
+  localStorage.setItem('viberel_sens', String(SENS));
+  applySens();
 });
+$('#sensPlus').addEventListener('click', ()=>{
+  SENS = Math.min(SENS_MAX, SENS * SENS_STEP);
+  localStorage.setItem('viberel_sens', String(SENS));
+  applySens();
+});
+applySens();
 /* 四向键/中心键绑定入口（设置面板 → 换绑弹层）：单击/双击两个槽位 */
 function bindTargetFrom(el){
   // 返回 {key:'up'|'center', slot:'bind'|'bind2'}
