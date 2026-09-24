@@ -1,14 +1,14 @@
-﻿# 停止 VibeRemote：仅精确匹配 viberemote 目录下的 server.py（不影响工作台 tools/server.py）
+# Stop VibeRemote: match only this project's processes (server.py or packaged VibeRemote.exe),
+# never touch unrelated services like the workbench tools/server.py
 $targets = Get-CimInstance Win32_Process | Where-Object {
-    $_.Name -match '^pythonw?\.exe$' -and
-    $_.CommandLine -match 'viberemote' -and
-    $_.CommandLine -match 'server\.py'
+    ($_.Name -match '^pythonw?\.exe$' -and $_.CommandLine -match 'viberemote' -and $_.CommandLine -match 'server\.py') -or
+    $_.Name -match '^VibeRemote\.exe$'
 }
 if ($targets) {
     foreach ($t in $targets) {
         Stop-Process -Id $t.ProcessId -Force -ErrorAction SilentlyContinue
-        Write-Host ("已停止 PID " + $t.ProcessId)
+        Write-Host ("Stopped PID " + $t.ProcessId)
     }
 } else {
-    Write-Host "未发现运行中的 VibeRemote 服务"
+    Write-Host "No running VibeRemote service found"
 }

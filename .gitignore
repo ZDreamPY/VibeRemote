@@ -6,6 +6,14 @@ __pycache__/
 # 运行日志（含敏感信息如手机访问记录，不上传）
 server.log
 
+# 配对 PIN（每台机器独立生成，不上传）
+pin.txt
+
+# 打包产物（build_exe.bat 生成）
+dist/
+build/
+*.spec
+
 # 环境文件
 .env
 .venv/

@@ -26,11 +26,38 @@ from pynput import keyboard, mouse
 
 PORT_HTTP = 8081
 PORT_WS = 8766
-WEB_DIR = Path(__file__).resolve().parent
+
+# 路径：打包(exe)与源码运行两种形态
+#  - BASE：持久化数据目录（pin.txt/server.log）。exe 放 exe 所在目录，保证 PIN 重启不变
+#  - INDEX_DIR：静态网页目录。exe 时 index.html 在 PyInstaller 解压目录 _MEIPASS
+if getattr(sys, "frozen", False):
+    BASE = Path(sys.executable).resolve().parent
+    INDEX_DIR = Path(getattr(sys, "_MEIPASS", BASE))
+else:
+    BASE = Path(__file__).resolve().parent
+    INDEX_DIR = BASE
+
+# 配对 PIN：首次启动生成 4 位数字，存 pin.txt，之后保持不变
+PIN_FILE = BASE / "pin.txt"
+
+def _load_or_create_pin():
+    if PIN_FILE.exists():
+        v = PIN_FILE.read_text(encoding="utf-8").strip()
+        if v and v.isdigit() and len(v) == 4:
+            return v
+    import secrets
+    pin = f"{secrets.randbelow(10000):04d}"
+    try:
+        PIN_FILE.write_text(pin, encoding="utf-8")
+    except Exception:
+        pass
+    return pin
+
+PIN = _load_or_create_pin()
 
 # 无控制台运行（pythonw/后台）时，stdout 可能为 None，重定向到日志文件
 if sys.stdout is None:
-    _log = open(WEB_DIR / "server.log", "a", encoding="utf-8", buffering=1)
+    _log = open(BASE / "server.log", "a", encoding="utf-8", buffering=1)
     sys.stdout = _log
     sys.stderr = _log
 
@@ -213,11 +240,27 @@ class InputEngine:
 engine = InputEngine()
 
 
-# ---------- WebSocket 处理 ----------
+# ---------- WebSocket 处理（配对 PIN 鉴权） ----------
 async def ws_handler(ws):
     peer = ws.remote_address
-    print(f"[+] 手机已连接: {peer}")
     try:
+        # 鉴权握手：8 秒内首条消息必须是 {"type":"auth","pin":xxx}
+        try:
+            raw = await asyncio.wait_for(ws.recv(), timeout=8)
+        except asyncio.TimeoutError:
+            print(f"[-] 鉴权超时，断开: {peer}")
+            return
+        try:
+            msg = json.loads(raw)
+        except json.JSONDecodeError:
+            msg = {}
+        if msg.get("type") == "auth" and msg.get("pin") == PIN:
+            await ws.send(json.dumps({"type": "auth", "ok": True}))
+            print(f"[+] 手机配对成功: {peer}")
+        else:
+            await ws.send(json.dumps({"type": "auth", "ok": False}))
+            print(f"[-] 配对 PIN 错误，拒绝连接: {peer}")
+            return
         async for raw in ws:
             try:
                 msg = json.loads(raw)
@@ -251,11 +294,47 @@ def handle_msg(msg):
         print(f"[!] 执行指令失败 {t}: {e}")
 
 
+# ---------- 配对页（大号 PIN + 二维码） ----------
+PAIR_PAGE = """<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VibeRemote 配对</title>
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:#0a0d1f;color:#eef1ff;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+  .box{max-width:420px;width:92vw;background:rgba(12,16,34,.92);border:1px solid rgba(150,170,255,.22);
+    border-radius:24px;padding:32px 28px;text-align:center;box-shadow:0 0 60px rgba(0,229,255,.15)}
+  h1{font-size:20px;margin:0 0 6px;background:linear-gradient(90deg,#00e5ff,#ff3df0);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  p{color:rgba(200,210,255,.6);font-size:13px;margin:0 0 20px}
+  .pin{font-size:64px;font-weight:800;letter-spacing:14px;color:#00e5ff;text-shadow:0 0 24px rgba(0,229,255,.55);
+    margin:0 0 20px;font-variant-numeric:tabular-nums}
+  .qr{width:210px;height:210px;margin:0 auto 18px;background:#fff;border-radius:16px;padding:10px}
+  .qr svg{width:100%;height:100%;display:block}
+  .url{font-size:14px;color:#b8e6ff;word-break:break-all;background:rgba(255,255,255,.05);
+    border:1px solid rgba(150,170,255,.22);border-radius:12px;padding:10px 12px}
+  .tip{font-size:12px;color:rgba(200,210,255,.45);margin-top:16px;line-height:1.7}
+</style>
+</head>
+<body>
+  <div class="box">
+    <h1>VibeRemote 配对</h1>
+    <p>用手机浏览器扫码打开，输入配对码即可遥控</p>
+    <div class="pin">{pin}</div>
+    <div class="qr">{qr}</div>
+    <div class="url">{url}</div>
+    <div class="tip">配对码保存于 pin.txt，重启不变。<br>如担心泄露，删除 pin.txt 重启服务即可重新生成。</div>
+  </div>
+</body>
+</html>"""
+
 # ---------- 静态网页托管 ----------
 class WebServer(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path in ("/", "/index.html"):
-            f = WEB_DIR / "index.html"
+            f = INDEX_DIR / "index.html"
             if f.exists():
                 body = f.read_bytes()
                 self.send_response(200)
@@ -270,23 +349,27 @@ class WebServer(BaseHTTPRequestHandler):
                 return
             self.send_error(404)
         elif self.path == "/qrcode.svg":
-            self.send_qr()
+            self.send_pair_page()
         else:
             self.send_error(404)
 
-    def send_qr(self):
-        if not QR_OK:
-            self.send_error(404)
-            return
-        from qrcode.image.svg import SvgPathImage
+    def send_pair_page(self):
         url = f"http://{get_ip()}:{PORT_HTTP}/"
-        img = qrcode.make(url, image_factory=SvgPathImage)
-        body = img.to_string().decode()
+        qr = ""
+        if QR_OK:
+            from qrcode.image.svg import SvgPathImage
+            img = qrcode.make(url, image_factory=SvgPathImage)
+            qr = img.to_string().decode()
+        body = PAIR_PAGE.replace("{pin}", PIN).replace("{qr}", qr).replace("{url}", url)
+        data = body.encode("utf-8")
         self.send_response(200)
-        self.send_header("Content-Type", "image/svg+xml; charset=utf-8")
-        self.send_header("Content-Length", str(len(body.encode())))
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        self.send_header("Content-Length", str(len(data)))
         self.end_headers()
-        self.wfile.write(body.encode())
+        self.wfile.write(data)
 
     def log_message(self, *a):
         pass  # 静默
@@ -312,8 +395,9 @@ def main():
     print("  VibeRemote PC 遥控服务 (P0)")
     print(f"  手机访问:  http://{ip}:{PORT_HTTP}/")
     print(f"  WebSocket: ws://{ip}:{PORT_WS}/")
+    print(f"  配对 PIN:  {PIN}  (保存于 pin.txt)")
     if QR_OK:
-        print(f"  电脑端二维码: http://{ip}:{PORT_HTTP}/qrcode.svg (浏览器打开扫码)")
+        print(f"  电脑端配对页: http://{ip}:{PORT_HTTP}/qrcode.svg (浏览器打开扫码)")
     print("=" * 56)
 
     # 尝试自动打开二维码到默认浏览器
